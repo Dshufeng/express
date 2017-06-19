@@ -1,0 +1,16 @@
+{
+  "name": "express",
+  "version": "1.0.0",
+  "description": "demo\u001b[D\u001b[D\u001b[D\u001b[D\u001b[Dexpress-demo",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "dsf",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "moment": "^2.18.1",
+    "mysql": "^2.13.0"
+  }
+}

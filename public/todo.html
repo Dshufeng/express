@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Todo App</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css">
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/bootstrap-table.css">
+    <link rel="stylesheet" href="./css/todo.css">
+    <style>
+        .update {
+            color: #333;
+            margin-right: 5px;
+        }
+        .remove {
+            color: red;
+            margin-left: 5px;
+        }
+        .alert {
+            padding: 0 14px;
+            margin-bottom: 0;
+            display: inline-block;
+        }
+    </style>
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/bootstrap-table.js"></script>
+</head>
+<body>
+	<div class="container">
+	    <h1>Todo App</h1>
+	    <p class="toolbar">
+	        <a class="create btn btn-default" href="javascript:">Add</a>
+	        <span class="alert"></span>
+	    </p>
+		<table id="table">
+		<!-- 
+			<tr>
+				<th data-field="id">ID</th>
+				<th data-field="status">Status</th>
+				<th data-field="content">Content</th>
+				<th data-field="creator">Creator</th>
+				<th data-field="update_time">Update Time</th>
+			</tr> -->
+		</table>
+	</div>
+
+	<div class="modal fade" id="myModal">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+						&times;
+					</button>
+					<h4 class="modal-title">
+						模态框（Modal）标题
+					</h4>
+				</div>
+				<div class="modal-body">
+					<div class="form-group" id="id-block">
+	                    <label>id</label>
+	                    <input type="number" class="form-control" name="id" placeholder="id" readonly>
+	                </div>
+	                <div class="form-group" id="content-block">
+	                    <label>Content</label>
+	                    <input type="text" class="form-control" name="content" placeholder="content">
+	                </div>
+	                <div class="form-group" id="status-block">
+	                    <label>status</label>
+	                    <select class="form-control" name="status">
+	                        <option value="0">未完成</option>
+	                        <option value="1">已完成</option>
+	                    </select>
+	                </div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                	<button type="button" class="btn btn-primary submit">Submit</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal -->
+	</div>	
+	<script type="text/javascript">
+		var API_URL = '/todo/',
+			$modal = $('#myModal'),
+			$alert = $('.alert');
+
+		// modal 初始化	
+		// $modal.on('hidden.bs.modal', function () {
+		//   $modal.find('select option').removeAttr('selected');
+		// })	
+
+			
+		$.fn.extend({
+            animateCss: function (animationName) {
+                var animationEnd = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend';
+                this.addClass('animated ' + animationName).one(animationEnd, function() {
+                    $(this).removeClass('animated ' + animationName);
+                });
+            }
+        });
+        	
+		window.operateEvents =  {
+	    	'click .update':function(e, value, row){
+	    		
+	    		$modal.find('#id-block').show();
+            	$modal.find('#status-block').show();
+	    		$modal.find('.modal-title').text($(this).attr('title'));
+	    		$modal.data('id',row.id);
+
+	    		// $modal.find('select option').removeAttr('selected');
+	    		$modal.find('select option[value="'+row.status+'"]').attr('selected',true);
+	    		for(var name in row){
+	    			$modal.find('input[name=' + name + ']').val(row[name]);
+	    		}
+
+	    		$modal.modal('show').animateCss('rotateIn');
+	    	},
+
+	    	'click .remove':function(e, value, row){
+	    		if(confirm('确定删除吗?')){
+	    			$.ajax({
+	    				url:API_URL+row.id,
+	    				contentType: 'application/json',
+	    				type:'delete',
+	    				success:function(){
+	    					$("#table").bootstrapTable('refresh');
+	    					showAlert('success','delete success');
+	    				}
+	    			});
+	    		}
+	    	}
+	    };	
+
+		var table = $("#table").bootstrapTable({
+			url:API_URL,
+			sidePagination:"server",
+			idField:'id',
+			toolbar:'.toolbar',
+			striped:true,
+			sidePagination: "server",
+			pagination:true,
+			pageSize:5,
+			pageList:[5, 10, 15],
+			pageNumber:1, 
+			showToggle:true,
+			showPaginationSwitch:true,
+			search:true,
+			columns: [{
+		        field: 'id',
+		        title: 'Item ID'
+		    }, {
+		        field: 'content',
+		        title: 'Item Content'
+		    }, {
+		        field: 'status',
+		        title: 'Item Status',
+		        formatter:formatterStatus
+		    },{
+		        field: 'creator',
+		        title: 'Item Creator'
+		    },{
+		        field: 'update_time',
+		        title: 'Item Update_time'
+		    },{
+		        field: 'Action',
+		        title: 'Item Action',
+		        events:operateEvents,
+		        formatter:actionFormatter,
+		    }],
+		});
+		function actionFormatter(value) {
+	        return [
+	            '<a class="update" href="javascript:" title="Update Item"><i class="glyphicon glyphicon-edit"></i></a>',
+	            '<a class="remove" href="javascript:" title="Delete Item"><i class="glyphicon glyphicon-remove-circle"></i></a>',
+	        ].join('');
+	    }
+
+	    $(function(){
+	    	$('.create').click(function(event) {
+	    		/* Act on the event */
+
+	    		$modal.modal('show').animateCss('rotateIn');
+	    		$modal.find('.modal-title').text($(this).text());
+	    		$modal.find('#id-block').hide();
+	    		$modal.find('#status-block').hide();
+	    		$modal.find('input[name=content]').val('');
+	    	});
+
+
+	    	$('.submit').click(function(event) {
+	    		/* Act on the event */
+	    		var rows = {};
+	    		$modal.find('input[name]').each(function(){
+	    			rows[$(this).attr('name')] = $(this).val();
+	    		});
+
+	    		$modal.find('select[name]').each(function(){
+	    			rows[$(this).attr('name')] = $(this).val();
+	    		});
+	    		
+	    		$.ajax({
+	    			url:API_URL+ ($modal.data('id') || ''),
+	    			type:$modal.data('id') ? 'put' : 'post',
+	    			data:JSON.stringify(rows),
+	    			contentType: 'application/json',
+	    			success:function (res) {
+	    				if(res.err){
+	    					$modal.modal('hide');
+	    					showAlert('danger','item error!');
+	    					return false;	
+	    				}
+	    				$("#table").bootstrapTable('refresh');
+	    				showAlert('success','add success');
+	    				$modal.modal('hide');
+	    			},
+	    			error: function (err) {
+	    				
+	    			}
+	    		});
+	    	});
+	    });
+		
+		function showAlert(type,title){
+			$alert.attr('class','alert alert-'+ type +'')
+				.html('<i class="glyphicon glyphicon-check"></i> '+ title +'').fadeIn('slow');
+
+			setTimeout(function(){
+				$alert.fadeOut('slow');
+			},2000);	
+		}
+	    
+	    function formatterStatus(value){
+	    	return value==0?'未完成':'已完成';
+	    }
+
+
+	</script>
+</body>
+</html>
